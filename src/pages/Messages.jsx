@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -8,55 +8,49 @@ import {
   StyleSheet,
   Image,
   SafeAreaView,
-  Platform,
-  PermissionsAndroid,
   Pressable,
-  Alert
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 
 import COLORS from '../constants/colors';
 
-import Voice from '@react-native-voice/voice';
 import Tts from 'react-native-tts';
+import Voice from '@react-native-voice/voice';
+import endpoints from '../constants/endpoints';
+
+import Language from '../constants/language';
+import { useGlobal } from '../context/GlobalContext';
+import useAPIResolver from '../helpers/useApiResolver';
+import requestMicrophonePermission from '../helpers/requestMicrophonePermission';
+
 
 const Messages = () => {
-    
+  const {globalLanguage} = useGlobal()
   const [messages, setMessages] = useState([]);
   const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState({speaking: false, messageId: null});
+  const [isSpeaking, setIsSpeaking] = useState({
+    speaking: false,
+    messageId: null,
+  });
   const [recognizedText, setRecognizedText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const disabled = isListening || isSpeaking.speaking
+  const {APIRequest: CHAT_API_RESQUEST} = useAPIResolver()
 
-  async function requestMicrophonePermission() {
-    try {
-        if (Platform.OS === 'android') {
-            const granted = await PermissionsAndroid.request(
-                PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-                {
-                    title: "Microphone Permission",
-                    message: "This app needs access to your microphone to record audio.",
-                    buttonNeutral: "Ask Me Later",
-                    buttonNegative: "Cancel",
-                    buttonPositive: "OK",
-                }
-            );
+  const scrollViewRef = useRef(null);
 
-            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                console.log("Microphone permission granted");
-            } else {
-                console.log("Microphone permission denied");
-            }
-        }
-    } catch (err) {
-        console.warn(err);
-    }
-}
+  const disabled = isListening || isSpeaking.speaking || isLoading;
+
+  const language = Language(globalLanguage)
+
 
   useEffect(() => {
+    
+    requestMicrophonePermission()
 
     Tts.getInitStatus().then(() => {
-      Tts.setDefaultLanguage('en-US');
+      Tts.setDefaultLanguage('en-US')
     })
 
     Voice.onSpeechStart = onSpeechStart;
@@ -64,22 +58,25 @@ const Messages = () => {
     Voice.onSpeechResults = onSpeechResults;
     Voice.onSpeechError = onSpeechError;
 
-    requestMicrophonePermission();
-    Tts.addEventListener('tts-finish', (event) => setIsSpeaking({speaking: false, messageId: null}))
+    Tts.addEventListener('tts-finish', event => {
+      setIsSpeaking({speaking: false, messageId: null});
+      Tts.stop()
+    })
 
     return () => {
       Voice.destroy().then(Voice.removeAllListeners);
-    }
-  }, []);
+    };
 
-  const onSpeechStart = (e) => {
-    console.log('Recording started', e);
-    setIsListening(true); // Start loading GIF here
+  }, [])
+
+  const onSpeechStart = e => {
+    console.log('Recording started', e)
+    setIsListening(true)
   };
 
-  const onSpeechEnd = async (e) => {
-    console.log('Recording stopped', e);
-    setIsListening(false); // Stop loading GIF here
+  const onSpeechEnd = async e => {
+    console.log('Recording stopped', e)
+    setIsListening(false)
   };
 
   const onSpeechResults = event => {
@@ -89,12 +86,8 @@ const Messages = () => {
   };
 
   const onSpeechError = error => {
-    Alert.alert(
-        "Alert",
-        "No speech detected!",
-        [{ text: "Dismiss" }]
-    );
-    setIsListening(false); // Ensure loading GIF stops even on error
+    Alert.alert('Alert', 'No speech detected!', [{text: 'Dismiss'}]);
+    setIsListening(false)
   };
 
   const startListening = async () => {
@@ -119,8 +112,13 @@ const Messages = () => {
 
   const sendMessage = () => {
     if (recognizedText) {
-      setMessages([...messages, {text: recognizedText.trim(), sender: 'user', id: messages.length + 1 }]);
+      setMessages([
+        ...messages,
+        {role: 'user', content: recognizedText.trim(), id: messages.length + 1},
+      ]);
+      postUserMessage(recognizedText)
       setRecognizedText('');
+      scrollViewRef?.current?.scrollToEnd({ animated: true })
     }
   };
 
@@ -128,12 +126,41 @@ const Messages = () => {
     setIsSpeaking({speaking: true, messageId: id ? id : null});
     Tts.speak(text, {
       iosVoiceId: 'com.apple.ttsbundle.Samantha-compact',
-      rate: 0.5,
-    });
-  };
+      rate: 0.5
+    })
+  }
 
+  const stop = () => {
+    Tts.stop()
+    setIsSpeaking({speaking: false, messageId: null})
+  }
 
-return (
+  const postUserMessage = async (message) => {
+    setIsLoading(true)
+    try {
+      const body = {
+        "messages" : [
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      }
+      const res = await CHAT_API_RESQUEST(endpoints.chatApi, "POST", {}, body)
+      if (res.ok) {
+        setMessages(prev => [
+          ...prev,
+          {role: 'admin', content: res?.data?.responses[0].trim(), id: messages.length + 10},
+        ]);
+      }
+    } catch (error) {
+      console.error("Error while sending message: ", error)
+    } finally {
+      setIsLoading(false)
+    }
+  } 
+
+  return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeAreaView}>
         <View>
@@ -145,11 +172,11 @@ return (
           </View>
           <View style={styles.banner}>
             <Text style={styles.bannerText}>
-              Tap on mic and start recording..
+              {language.messageScreenHeader}
             </Text>
           </View>
         </View>
-        <ScrollView contentContainerStyle={styles.messagesContainer}>
+        <ScrollView contentContainerStyle={styles.messagesContainer} ref={scrollViewRef}>
           {messages && messages.length > 0 ? (
             messages.map((message, index) => (
               <View
@@ -157,44 +184,54 @@ return (
                 style={{
                   flexDirection: 'row',
                   alignSelf:
-                    message.sender === 'user' ? 'flex-end' : 'flex-start',
-                }}>
-                {(isSpeaking.speaking && isSpeaking.messageId === message.id)
-                    ?  <Text style={styles.speakingDots}>...</Text>
-                    :
-                    <Pressable disabled={disabled} onPress={() => speak(message.text, message.id)} style={styles.soundIconContainer} >
-                        <Image
-                            source={require('../assets/soundIcon.png')}
-                            style={{...styles.soundIcon, opacity: disabled ? 0.3 : 1}}
-                        />
-                    </Pressable>
-                }
+                    message.role === 'user' ? 'flex-end' : 'flex-start',
+                }}
+              >
+                {isSpeaking.speaking && isSpeaking.messageId === message.id ? (
+                  <Pressable onPress={stop} style={styles.speakStopIconContainer}>
+                    <Image source={require('../assets/stop.png')} style={styles.speakStopIcon} />
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    disabled={disabled}
+                    onPress={() => speak(message.content, message.id)}
+                    style={styles.soundIconContainer}>
+                    <Image
+                      source={require('../assets/volume.png')}
+                      style={{...styles.soundIcon, opacity: disabled ? 0.3 : 1}}
+                    />
+                  </Pressable>
+                )}
                 <View
-                  style={[
-                    styles.messageBubble,
-                    {
-                      alignSelf:
-                        message.sender === 'user' ? 'flex-end' : 'flex-start',
-                      backgroundColor:
-                        message.sender === 'user'
-                          ? COLORS.primary
-                          : COLORS.midnightBlue,
-                    },
-                  ]}>
-                  <Text style={styles.messageText}>{message.text}</Text>
+                  style={{...styles.messageBubble,
+                    alignSelf:
+                      message.role === 'user' ? 'flex-end' : 'flex-start',
+                    backgroundColor:
+                      message.role === 'user'
+                        ? COLORS.primary
+                        : COLORS.midnightBlue
+                  }}
+                >
+                  <Text style={styles.messageText}> {message.content} </Text>
                 </View>
               </View>
             ))
           ) : (
             <View style={styles.emptyMessageContainer}>
-              <Text style={styles.emptyMessageText}>No messages yet...</Text>
+              <Text style={styles.emptyMessageText}>{language.emptyMessageText}</Text>
             </View>
           )}
+          {isLoading && <View style={styles.activityIndicatorView}>
+            <ActivityIndicator size='small' />
+          </View>
+          }
         </ScrollView>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Type your message..."
+            disabled={isListening}
+            placeholder={language.messageInputPlaceholder}
+            placeholderTextColor={COLORS.placeholder}
             value={recognizedText}
             multiline
             onChangeText={text => setRecognizedText(text)}
@@ -206,31 +243,39 @@ return (
               style={styles.voiceButton}>
               {isListening ? (
                 <View style={styles.stopBtn}>
-                    <Image
-                        source={require('../assets/anime.gif')}
-                        style={styles.anime}
-                    />
-                    <Image 
-                        source={require('../assets/stop-button.png')}
-                        style={styles.stopIcon}
-                    />
-                </View>
-              ) : <View style={styles.microphoneContainer}>
                   <Image
-                    source={require('../assets/micro.png')}
-                    style={{...styles.microphone, opacity: disabled ? 0.3 : 1}}
+                    source={require('../assets/anime.gif')}
+                    style={styles.anime}
+                  />
+                  <Image
+                    source={require('../assets/stop-button.png')}
+                    style={styles.stopIcon}
                   />
                 </View>
-              }
+              ) : (
+                <View
+                  style={{
+                    ...styles.microphoneContainer,
+                    opacity: disabled ? 0.3 : 1,
+                  }}>
+                  <Image
+                    source={require('../assets/micro.png')}
+                    style={styles.microphone}
+                  />
+                </View>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               onPress={sendMessage}
               style={{
                 ...styles.sendButton,
-                backgroundColor: isListening || !recognizedText ? COLORS.cornflowerBlue : COLORS.secondary,
+                backgroundColor:
+                  isListening || !recognizedText
+                    ? COLORS.cornflowerBlue
+                    : COLORS.secondary,
               }}
-              disabled={isListening || !recognizedText}>
-              <Text style={styles.sendButtonText}>Send</Text>
+              disabled={isListening || isLoading || !recognizedText}>
+              <Text style={styles.sendButtonText}>{language.send}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -257,7 +302,6 @@ const styles = StyleSheet.create({
     color: COLORS.white,
   },
   messagesContainer: {
-    flex: 1,
     padding: 10,
   },
   logoContainer: {
@@ -296,7 +340,7 @@ const styles = StyleSheet.create({
     padding: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
-    color: COLORS.primary,
+    color: COLORS.black,
     backgroundColor: COLORS.veryLightGray,
   },
   iconsContainer: {
@@ -322,21 +366,26 @@ const styles = StyleSheet.create({
   },
   sendButtonText: {
     color: COLORS.white,
-    fontSize: 16
+    fontSize: 16,
   },
   soundIconContainer: {
     alignSelf: 'flex-end',
   },
-  speakingDots: {
-    fontSize: 40,
-    alignSelf: 'center',
-    paddingHorizontal: 5,
+  speakStopIconContainer: {
+    justifyContent: 'flex-end',
+    marginBottom: 5,
+    marginRight: 5
+  },
+  speakStopIcon: {
+    height: 20, 
+    width: 20
   },
   soundIcon: {
     height: 20,
     width: 20,
     marginBottom: 5,
-    marginHorizontal: 5,
+    alignSelf: 'flex-end',
+    marginRight: 5,
   },
   anime: {
     height: 20,
@@ -348,18 +397,18 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   microphoneContainer: {
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    borderRadius: 50, 
-    backgroundColor: COLORS.violetBlue, 
-    padding: 8
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 50,
+    backgroundColor: COLORS.violetBlue,
+    padding: 8,
   },
   microphone: {
     objectFit: 'contain',
     height: 25,
     width: 25,
-    borderRadius: 50
-},
+    borderRadius: 50,
+  },
   emptyMessageContainer: {
     alignItems: 'center',
   },
@@ -368,8 +417,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.violetBlue,
     borderRadius: 10,
     color: COLORS.white,
-    boxShadow: '0 0 10px rgba(0 0 0 0 rgb(255, 255, 255)',
+    boxShadow: '0 0 10px rgba(0, 0, 0, .25)',
+  },
+  activityIndicatorView: {
+    width: "100%", 
+    alignContent: 'flex-start', 
+    alignItems: 'flex-start', 
+    justifyContent: 'center',
+    paddingLeft: 25
   }
 });
 
-export default Messages
+export default Messages;

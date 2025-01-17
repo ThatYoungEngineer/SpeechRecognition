@@ -6,23 +6,37 @@ import Messages from './src/pages/Messages';
 import BookACall from './src/pages/BookACall';
 import { Image, StyleSheet } from 'react-native';
 import COLORS from './src/constants/colors';
+import Language from './src/constants/language';
+import { useGlobal } from './src/context/GlobalContext';
+
 
 const App = () => {
-
+  
+  const {globalLanguage} = useGlobal()
+  const language = Language(globalLanguage)
   const Stack = createNativeStackNavigator();
   const Tab = createBottomTabNavigator();
 
   const TabNavigator = () => {
     return (
-      <Tab.Navigator initialRouteName='Chat' screenOptions={{headerShown: false,
+      <Tab.Navigator initialRouteName={language.chat} screenOptions={{headerShown: false,
         tabBarLabelStyle: { fontSize: 12, fontWeight: 400 },
         tabBarActiveTintColor: COLORS.themeColor,
         tabBarInactiveTintColor: COLORS.mediumGray
       }}>
-        <Tab.Screen name="Chat" component={Messages} options={{tabBarIcon: ({focused}) => <Image style={{...styles.messageIcon, opacity: focused ? 1 : 0.3}} source={require('./src/assets/message.png')} /> }} />
-        <Tab.Screen name="Book A Call" component={BookACall} options={{headerShown: true, headerTintColor: COLORS.white, headerStyle: {backgroundColor: COLORS.themeColor}, tabBarIcon: ({focused}) => <Image style={{...styles.callIcon, opacity: focused ? 1 : 0.3
-          
-        }} source={require('./src/assets/phone-call.png')} /> }} />
+        <Tab.Screen 
+          name={language.chat} component={Messages} 
+          options={{
+            tabBarIcon: ({focused}) => <Image style={{...styles.messageIcon, opacity: focused ? 1 : 0.3}} source={require('./src/assets/message.png')} /> 
+          }}
+        />
+        <Tab.Screen 
+          name={language.bookACall} component={BookACall} 
+          options={{
+            headerShown: true, headerTintColor: COLORS.white, headerStyle: {backgroundColor: COLORS.themeColor}, 
+            tabBarIcon: ({focused}) => <Image style={{...styles.callIcon, opacity: focused ? 1 : 0.3}}  source={require('./src/assets/phone-call.png')} /> 
+          }}
+        />
       </Tab.Navigator>
     )
   }
