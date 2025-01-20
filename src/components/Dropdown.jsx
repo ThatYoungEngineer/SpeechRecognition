@@ -17,7 +17,7 @@ const Dropdown = () => {
         updateGlobalLanguage(item.value)
     }
 
-  return (
+    return (
         <SelectCountry
             style={styles.dropdown}
             placeholderStyle={styles.placeholderStyle}
@@ -25,12 +25,12 @@ const Dropdown = () => {
             inputSearchStyle={styles.inputSearchStyle}
             iconStyle={styles.iconStyle}
             iconColor={COLORS.primary}
-            imageField="image"
             imageStyle={styles.imageStyle}
             data={data}
             maxHeight={200}
             labelField="label"
             valueField="value"
+            imageField="image"
             placeholder=""
             searchPlaceholder="Search..."
             value={value}
@@ -39,13 +39,13 @@ const Dropdown = () => {
             closeModalWhenSelectedItem
             confirmSelectItemStyle={styles.confirmSelectItemStyle}
         />
-  )
+    )
 }
 
 const styles = StyleSheet.create({
     dropdown: {
       margin: 0,
-      padding: 10,
+      padding: 5,
       borderColor: COLORS.lightGray,
       borderWidth: 0.5
     },
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
       height: 20,
     },
     imageStyle: {
-      width: 20,
-      height: 20,
+      width: 12,
+      height: 12,
     },
     inputSearchStyle: {
       height: 40,

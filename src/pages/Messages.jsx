@@ -13,7 +13,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
-
 import Tts from 'react-native-tts';
 import Voice from '@react-native-voice/voice';
 
@@ -22,15 +21,14 @@ import endpoints from '../constants/endpoints';
 
 import Language from '../components/Language';
 
-import { useGlobal } from '../context/GlobalContext';
+import {useGlobal} from '../context/GlobalContext';
 
 import useAPIResolver from '../helpers/useApiResolver';
 import requestMicrophonePermission from '../helpers/requestMicrophonePermission';
 import Dropdown from '../components/Dropdown';
 
-
 const Messages = () => {
-  const {globalLanguage} = useGlobal()
+  const {globalLanguage} = useGlobal();
   const [messages, setMessages] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState({
@@ -40,22 +38,20 @@ const Messages = () => {
   const [recognizedText, setRecognizedText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const {APIRequest: CHAT_API_RESQUEST} = useAPIResolver()
+  const {APIRequest: CHAT_API_RESQUEST} = useAPIResolver();
 
   const scrollViewRef = useRef(null);
 
   const disabled = isListening || isSpeaking.speaking || isLoading;
 
-  const language = Language(globalLanguage)
-
+  const language = Language(globalLanguage);
 
   useEffect(() => {
-    
-    requestMicrophonePermission()
+    requestMicrophonePermission();
 
     Tts.getInitStatus().then(() => {
-      Tts.setDefaultLanguage('en-US')
-    })
+      Tts.setDefaultLanguage('en-US');
+    });
 
     Voice.onSpeechStart = onSpeechStart;
     Voice.onSpeechEnd = onSpeechEnd;
@@ -64,23 +60,22 @@ const Messages = () => {
 
     Tts.addEventListener('tts-finish', event => {
       setIsSpeaking({speaking: false, messageId: null});
-      Tts.stop()
-    })
+      Tts.stop();
+    });
 
     return () => {
       Voice.destroy().then(Voice.removeAllListeners);
     };
-
-  }, [])
+  }, []);
 
   const onSpeechStart = e => {
-    console.log('Recording started', e)
-    setIsListening(true)
+    console.log('Recording started', e);
+    setIsListening(true);
   };
 
   const onSpeechEnd = async e => {
-    console.log('Recording stopped', e)
-    setIsListening(false)
+    console.log('Recording stopped', e);
+    setIsListening(false);
   };
 
   const onSpeechResults = event => {
@@ -91,7 +86,7 @@ const Messages = () => {
 
   const onSpeechError = error => {
     Alert.alert('Alert', 'No speech detected!', [{text: 'Dismiss'}]);
-    setIsListening(false)
+    setIsListening(false);
   };
 
   const startListening = async () => {
@@ -120,9 +115,9 @@ const Messages = () => {
         ...messages,
         {role: 'user', content: recognizedText.trim(), id: messages.length + 1},
       ]);
-      postUserMessage(recognizedText)
+      postUserMessage(recognizedText);
       setRecognizedText('');
-      scrollViewRef?.current?.scrollToEnd({ animated: true })
+      scrollViewRef?.current?.scrollToEnd({animated: true});
     }
   };
 
@@ -130,52 +125,56 @@ const Messages = () => {
     setIsSpeaking({speaking: true, messageId: id ? id : null});
     Tts.speak(text, {
       iosVoiceId: 'com.apple.ttsbundle.Samantha-compact',
-      rate: 0.5
-    })
-  }
+      rate: 0.5,
+    });
+  };
 
   const stop = () => {
-    Tts.stop()
-    setIsSpeaking({speaking: false, messageId: null})
-  }
+    Tts.stop();
+    setIsSpeaking({speaking: false, messageId: null});
+  };
 
-  const postUserMessage = async (message) => {
-    setIsLoading(true)
+  const postUserMessage = async message => {
+    setIsLoading(true);
     try {
       const body = {
-        "messages" : [
+        messages: [
           {
-            role: "user",
-            content: message
-          }
-        ]
-      }
-      const res = await CHAT_API_RESQUEST(endpoints.chatApi, "POST", {}, body)
+            role: 'user',
+            content: message,
+          },
+        ],
+      };
+      const res = await CHAT_API_RESQUEST(endpoints.chatApi, 'POST', {}, body);
       if (res.ok) {
         setMessages(prev => [
           ...prev,
-          {role: 'admin', content: res?.data?.responses[0].trim(), id: messages.length + 10},
+          {
+            role: 'admin',
+            content: res?.data?.responses[0].trim(),
+            id: messages.length + 10,
+          },
         ]);
       }
     } catch (error) {
-      console.error("Error while sending message: ", error)
+      console.error('Error while sending message: ', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  } 
+  };
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeAreaView}>
         <View>
-          <View style={styles.logoContainer}>
-            <View style={{flex: 1, alignItems: 'center'}}>
+          <View style={styles.logoAndDropdownContainer}>
+            <View style={styles.logoContainer}>
               <Image
                 source={require('../assets/advantaged.png')}
                 style={styles.logo}
               />
             </View>
-            <View style={{position: 'absolute', top: '25%', right: 10 }}>
+            <View style={styles.dropdownContainer}>
               <Dropdown />
             </View>
           </View>
@@ -185,7 +184,9 @@ const Messages = () => {
             </Text>
           </View>
         </View>
-        <ScrollView contentContainerStyle={styles.messagesContainer} ref={scrollViewRef}>
+        <ScrollView
+          contentContainerStyle={styles.messagesContainer}
+          ref={scrollViewRef}>
           {messages && messages.length > 0 ? (
             messages.map((message, index) => (
               <View
@@ -194,11 +195,15 @@ const Messages = () => {
                   flexDirection: 'row',
                   alignSelf:
                     message.role === 'user' ? 'flex-end' : 'flex-start',
-                }}
-              >
+                }}>
                 {isSpeaking.speaking && isSpeaking.messageId === message.id ? (
-                  <Pressable onPress={stop} style={styles.speakStopIconContainer}>
-                    <Image source={require('../assets/stop.png')} style={styles.speakStopIcon} />
+                  <Pressable
+                    onPress={stop}
+                    style={styles.speakStopIconContainer}>
+                    <Image
+                      source={require('../assets/stop.png')}
+                      style={styles.speakStopIcon}
+                    />
                   </Pressable>
                 ) : (
                   <Pressable
@@ -212,28 +217,31 @@ const Messages = () => {
                   </Pressable>
                 )}
                 <View
-                  style={{...styles.messageBubble,
+                  style={{
+                    ...styles.messageBubble,
                     alignSelf:
                       message.role === 'user' ? 'flex-end' : 'flex-start',
                     backgroundColor:
                       message.role === 'user'
                         ? COLORS.primary
-                        : COLORS.midnightBlue
-                  }}
-                >
+                        : COLORS.midnightBlue,
+                  }}>
                   <Text style={styles.messageText}> {message.content} </Text>
                 </View>
               </View>
             ))
           ) : (
             <View style={styles.emptyMessageContainer}>
-              <Text style={styles.emptyMessageText}>{language.emptyMessageText}</Text>
+              <Text style={styles.emptyMessageText}>
+                {language.emptyMessageText}
+              </Text>
             </View>
           )}
-          {isLoading && <View style={styles.activityIndicatorView}>
-            <ActivityIndicator size='small' />
-          </View>
-          }
+          {isLoading && (
+            <View style={styles.activityIndicatorView}>
+              <ActivityIndicator size="small" />
+            </View>
+          )}
         </ScrollView>
         <View style={styles.inputContainer}>
           <TextInput
@@ -313,12 +321,21 @@ const styles = StyleSheet.create({
   messagesContainer: {
     padding: 10,
   },
-  logoContainer: {
+  logoAndDropdownContainer: {
     position: 'relative',
     flexDirection: 'row',
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  logoContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  dropdownContainer: {
+    position: 'absolute',
+    top: '30%',
+    right: 10,
   },
   logo: {
     width: 100,
@@ -385,11 +402,11 @@ const styles = StyleSheet.create({
   speakStopIconContainer: {
     justifyContent: 'flex-end',
     marginBottom: 5,
-    marginRight: 5
+    marginRight: 5,
   },
   speakStopIcon: {
-    height: 20, 
-    width: 20
+    height: 20,
+    width: 20,
   },
   soundIcon: {
     height: 20,
@@ -431,12 +448,12 @@ const styles = StyleSheet.create({
     boxShadow: '0 0 10px rgba(0, 0, 0, .25)',
   },
   activityIndicatorView: {
-    width: "100%", 
-    alignContent: 'flex-start', 
-    alignItems: 'flex-start', 
+    width: '100%',
+    alignContent: 'flex-start',
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    paddingLeft: 25
-  }
+    paddingLeft: 25,
+  },
 });
 
 export default Messages;
