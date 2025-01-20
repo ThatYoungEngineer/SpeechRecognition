@@ -1,8 +1,17 @@
-import Language from "./language"
+import usa from '../assets/usa.png'
+import spanish from '../assets/world.png'
+
+import Language from "../components/Language"
 
 const language = Language()
 
 export default {
+    DropDown: {
+        data: [
+            { label: "ENGLISH", value: 'english',  image: usa },
+            { label: "SPANISH", value: 'spanish',  image: spanish },
+        ]        
+    },
     BookACall: {
         initialFormData: {
         timeSlot1Date: '', 

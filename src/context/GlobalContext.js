@@ -1,6 +1,4 @@
-
-import { createContext, useContext, useState } from "react";
-
+import { createContext, useContext, useState } from "react"
 
 const GlobalContext = createContext()
 
@@ -9,7 +7,6 @@ export const useGlobal = () => useContext(GlobalContext)
 export const GlobalContextProvider = ({ children }) => {
 
     const [globalLanguage, setGlobalLanguage] = useState("english")
-
 
     const updateGlobalLanguage = (data) => {
         setGlobalLanguage(data)

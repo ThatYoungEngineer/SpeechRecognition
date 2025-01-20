@@ -13,16 +13,20 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
-import COLORS from '../constants/colors';
 
 import Tts from 'react-native-tts';
 import Voice from '@react-native-voice/voice';
+
+import COLORS from '../constants/colors';
 import endpoints from '../constants/endpoints';
 
-import Language from '../constants/language';
+import Language from '../components/Language';
+
 import { useGlobal } from '../context/GlobalContext';
+
 import useAPIResolver from '../helpers/useApiResolver';
 import requestMicrophonePermission from '../helpers/requestMicrophonePermission';
+import Dropdown from '../components/Dropdown';
 
 
 const Messages = () => {
@@ -165,10 +169,15 @@ const Messages = () => {
       <SafeAreaView style={styles.safeAreaView}>
         <View>
           <View style={styles.logoContainer}>
-            <Image
-              source={require('../assets/advantaged.png')}
-              style={styles.logo}
-            />
+            <View style={{flex: 1, alignItems: 'center'}}>
+              <Image
+                source={require('../assets/advantaged.png')}
+                style={styles.logo}
+              />
+            </View>
+            <View style={{position: 'absolute', top: '25%', right: 10 }}>
+              <Dropdown />
+            </View>
           </View>
           <View style={styles.banner}>
             <Text style={styles.bannerText}>
@@ -305,6 +314,8 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   logoContainer: {
+    position: 'relative',
+    flexDirection: 'row',
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',

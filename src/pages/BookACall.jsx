@@ -14,21 +14,23 @@ import {
 import Tts from 'react-native-tts';
 
 import COLORS from '../constants/colors';
-import database from '../constants/database';
-import Language from '../constants/language';
-import { useGlobal } from '../context/GlobalContext';
+import Database from '../constants/database';
+
+import Language from '../components/Language';
+
+import { useGlobal } from '../context/GlobalContext'
 
 const BookACall = () => {
 
   const {globalLanguage} = useGlobal()
-  const initialFormData = database.BookACall.initialFormData;
+  const initialFormData = Database.BookACall.initialFormData;
 
   const [formData, setFormData] = useState(initialFormData);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const language = Language(globalLanguage)
 
-  const disabled = database.BookACall.disabledFormFields(formData);
+  const disabled = Database.BookACall.disabledFormFields(formData);
   const speakString = language.speakString(
     formData.timeSlot1Date,
     formData.timeSlot1Time,
@@ -37,7 +39,7 @@ const BookACall = () => {
     formData.timeSlot3Date,
     formData.timeSlot3Time,
   );
-  const timeSlots = database.BookACall.timeSlots;
+  const timeSlots = Database.BookACall.timeSlots;
 
   useEffect(() => {
     Tts.getInitStatus().then(() => {
@@ -68,10 +70,10 @@ const BookACall = () => {
     Alert.alert(language.success, language.formSubmittedSuccess, [
       {
         text: language.OK,
-        onPress: () => setFormData(initialFormData),
-      },
-    ]);
-  };
+        onPress: () => setFormData(initialFormData)
+      }
+    ])
+  }
 
   const speak = async () => {
     if (isSpeaking) {
