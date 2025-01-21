@@ -16,9 +16,10 @@ import Tts from 'react-native-tts';
 import COLORS from '../constants/colors';
 import Database from '../constants/database';
 
+import { styles } from '../styles/bookACall';
 import Language from '../components/Language';
-
 import { useGlobal } from '../context/GlobalContext'
+
 
 const BookACall = () => {
 
@@ -106,160 +107,76 @@ const BookACall = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.body}>
-        <View style={styles.bodyHeader}>
-          <View style={styles.bodyTitle}>
-            <Text style={styles.bodyTitleTexts}>
-              {language.bookACallHeaderPrimary}
-            </Text>
-            <Text style={styles.bodyTitleTexts}>
-              {language.bookACallHeaderSecondary}
-            </Text>
-          </View>
-          {!isSpeaking ? (
-            <TouchableOpacity
-              disabled={disabled || isSpeaking}
-              style={{opacity: disabled || isSpeaking ? 0.1 : 1}}
-              onPress={speak}>
-              <Image
-                source={require('../assets/volume.png')}
-                style={styles.soundIcon}
-              />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={stop}>
-              <Image
-                source={require('../assets/stop.png')}
-                style={styles.stopSoundBtn}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-        <ScrollView style={styles.scrollView}>
-          {timeSlots.map((timeSlot, index) => (
-            <View key={timeSlot.id || index} style={styles.timeSlot}>
-              <Text style={styles.timeSlotTitle}>
-                {timeSlot.title} <Text style={styles.requiredIcon}> *</Text>
+      <ScrollView>
+        <View style={styles.body}>
+          <View style={styles.bodyHeader}>
+            <View style={styles.bodyTitle}>
+              <Text style={styles.bodyTitleTexts}>
+                {language.bookACallHeaderPrimary}
               </Text>
-              <View style={styles.inputsContainer}>
-                <TextInput
-                  placeholderTextColor={COLORS.placeholder}
-                  value={formData[`timeSlot${timeSlot.id}Date`]}
-                  placeholder={timeSlot.date}
-                  style={styles.input}
-                  onChange={e => handleChangeDate(e, timeSlot.id)}
-                />
-                <TextInput
-                  placeholderTextColor={COLORS.placeholder}
-                  value={formData[`timeSlot${timeSlot.id}Time`]}
-                  placeholder={timeSlot.time}
-                  style={styles.input}
-                  onChange={e => handleChangeTime(e, timeSlot.id)}
-                />
-              </View>
+              <Text style={styles.bodyTitleTexts}>
+                {language.bookACallHeaderSecondary}
+              </Text>
             </View>
-          ))}
-          <View style={styles.submitBtnContainer}>
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={disabled || isSpeaking}
-              style={{
-                ...styles.submitBtn,
-                opacity: disabled || isSpeaking ? 0.5 : 1,
-              }}>
-              <Text style={styles.submit}>{language.submit}</Text>
-            </TouchableOpacity>
+            {!isSpeaking ? (
+              <TouchableOpacity
+                disabled={disabled || isSpeaking}
+                style={{opacity: disabled || isSpeaking ? 0.1 : 1}}
+                onPress={speak}>
+                <Image
+                  source={require('../assets/volume.png')}
+                  style={styles.soundIcon}
+                />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={stop}>
+                <Image
+                  source={require('../assets/stop.png')}
+                  style={styles.stopSoundBtn}
+                />
+              </TouchableOpacity>
+            )}
           </View>
-        </ScrollView>
-      </View>
+          <View style={styles.scrollView}>
+            {timeSlots.map((timeSlot, index) => (
+              <View key={timeSlot.id || index} style={styles.timeSlot}>
+                <Text style={styles.timeSlotTitle}>
+                  {timeSlot.title} <Text style={styles.requiredIcon}> *</Text>
+                </Text>
+                <View style={styles.inputsContainer}>
+                  <TextInput
+                    placeholderTextColor={COLORS.placeholder}
+                    value={formData[`timeSlot${timeSlot.id}Date`]}
+                    placeholder={timeSlot.date}
+                    style={styles.input}
+                    onChange={e => handleChangeDate(e, timeSlot.id)}
+                  />
+                  <TextInput
+                    placeholderTextColor={COLORS.placeholder}
+                    value={formData[`timeSlot${timeSlot.id}Time`]}
+                    placeholder={timeSlot.time}
+                    style={styles.input}
+                    onChange={e => handleChangeTime(e, timeSlot.id)}
+                  />
+                </View>
+              </View>
+            ))}
+            <View style={styles.submitBtnContainer}>
+              <TouchableOpacity
+                onPress={handleSubmit}
+                disabled={disabled || isSpeaking}
+                style={{
+                  ...styles.submitBtn,
+                  opacity: disabled || isSpeaking ? 0.5 : 1,
+                }}>
+                <Text style={styles.submit}>{language.submit}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
-};
+}
 
 export default BookACall;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  titleBar: {
-    paddingTop: '10%',
-    paddingBottom: 10,
-    backgroundColor: COLORS.themeColor,
-  },
-  titleBarText: {
-    fontSize: 20,
-    color: COLORS.white,
-    textAlign: 'center',
-    fontWeight: 600,
-  },
-  body: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  bodyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: COLORS.softGray,
-  },
-  bodyTitleTexts: {
-    fontSize: 15,
-    fontWeight: 500,
-    color: COLORS.black,
-  },
-  scrollView: {
-    flex: 1,
-    paddingTop: 10,
-  },
-  timeSlotTitle: {
-    fontSize: 15,
-    padding: 10,
-    backgroundColor: COLORS.lightGray,
-    color: COLORS.black,
-  },
-  inputsContainer: {
-    padding: 20,
-    paddingBottom: 0,
-    backgroundColor: COLORS.white,
-  },
-  requiredIcon: {
-    color: COLORS.red,
-    fontSize: 18,
-  },
-  input: {
-    padding: 15,
-    borderWidth: 1,
-    borderColor: COLORS.placeholder,
-    marginBottom: 16,
-    borderRadius: 5,
-    color: COLORS.black,
-  },
-  submitBtnContainer: {
-    paddingHorizontal: 20,
-    marginTop: 30,
-  },
-  submitBtn: {
-    width: '100%',
-    backgroundColor: COLORS.themeColor,
-    padding: 15,
-    color: COLORS.white,
-    marginBottom: 20,
-    borderRadius: 5,
-  },
-  submit: {
-    textAlign: 'center',
-    color: COLORS.white,
-    fontSize: 20,
-    fontWeight: 600,
-  },
-  soundIcon: {
-    height: 40,
-    width: 40,
-  },
-  stopSoundBtn: {
-    width: 40,
-    height: 40,
-  },
-});
